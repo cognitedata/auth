@@ -28,7 +28,6 @@ import {
 import { WorkloadIdentityClient } from './client/workload_identity_client';
 import { CredentialsJSONClient } from './client/credentials_json_client';
 import { AuthClient } from './client/auth_client';
-import { BaseClient } from './base';
 import { buildDomainWideDelegationJWT, generateCredentialsFilename } from './utils';
 
 const secretsWarning =
@@ -48,7 +47,7 @@ const oidcWarning =
 async function run(): Promise<void> {
   // Warn if pinned to HEAD
   if (isPinnedToHead()) {
-    logWarning(pinnedToHeadWarning('v0'));
+    logWarning(pinnedToHeadWarning('v1'));
   }
 
   const retries = Number(getInput('retries'));
@@ -249,10 +248,10 @@ async function main() {
           accessTokenLifetime,
         );
         const signedJWT = await client.signJWT(unsignedJWT, delegates);
-        ({ accessToken, expiration } = await BaseClient.googleOAuthToken(signedJWT));
+        ({ accessToken, expiration } = await client.googleOAuthToken(signedJWT));
       } else {
         const authToken = await client.getAuthToken();
-        ({ accessToken, expiration } = await BaseClient.googleAccessToken(authToken, {
+        ({ accessToken, expiration } = await client.googleAccessToken(authToken, {
           serviceAccount,
           delegates,
           scopes: accessTokenScopes,
@@ -273,7 +272,7 @@ async function main() {
       const serviceAccount = await client.getServiceAccount();
 
       const authToken = await client.getAuthToken();
-      const { token } = await BaseClient.googleIDToken(authToken, {
+      const { token } = await client.googleIDToken(authToken, {
         serviceAccount,
         audience: idTokenAudience,
         delegates,
@@ -299,7 +298,7 @@ async function main() {
  */
 function exportVariableAndWarn(key: string, value: string) {
   const existing = process.env[key];
-  if (existing) {
+  if (existing && existing !== value) {
     const old = JSON.stringify(existing);
     logWarning(`Overwriting existing environment variable ${key} (was: ${old})`);
   }
